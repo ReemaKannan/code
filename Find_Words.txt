@@ -1,0 +1,55 @@
+import numpy as np
+from keras.layers import Bidirectional, LSTM, Dense, Activation, RepeatVector, Lambda, Concatenate, Permute, Dot, Input, Multiply
+from keras.utils import to_categorical
+import keras.backend as K
+
+def get_vocab(file_name):
+    lang = np.genfromtxt(file_name, delimiter = ',', dtype = 'str', encoding = 'utf8')
+    
+    all_lang_words = []
+    for lang_sent in lang:
+        for word in lang_sent.split():
+            all_lang_words.append(word.lower())
+
+    lang_vocab = sorted(list(set(all_lang_words)))
+    
+    print("total words in vacab:",len(lang_vocab))
+    
+    return lang_vocab
+
+def get_max_length(X):
+    max_words = 0
+    for sentence in X:
+        sent_indices = [word.lower() for word in sentence.split()]
+        if len(sent_indices)> max_words:
+            max_words = len(sent_indices)
+            
+    return max_words
+
+def convert_to_one_hot(Y, C):
+    Y = np.eye(C)[np.array(Y).reshape(-1)]
+    return Y
+
+def convert_string_data_to_onehot(dataset, lang_vocab, Tx):
+    m = np.array(dataset).shape[0]
+    X = np.zeros((m, Tx),dtype = 'int')
+    i = 0
+    for sent in dataset:
+        j = 0
+        for word in sent.split():
+            X[i, j] = lang_vocab[word.lower()]
+            j += 1
+        i += 1
+
+    Xoh = np.array(list(map(lambda x: to_categorical(x, num_classes=len(lang_vocab)), X)))
+    
+    return X, Xoh
+
+def convert_example_to_indices(example, lang_vocab, Tx):
+    X = np.zeros((1, Tx), dtype = 'int')
+    i = 0
+    for word in example.split():
+        X[:, i] = lang_vocab[word]
+        i += 1
+        
+    return X
